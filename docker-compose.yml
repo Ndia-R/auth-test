@@ -1,0 +1,20 @@
+services:
+  frontend:
+    build:
+      context: .
+    ports:
+      - 5173:5173
+      - 4173:4173
+    volumes:
+      - .:/workspace
+      - node_modules:/workspace/node_modules
+    networks:
+      - shared-network
+    command: sleep infinity
+
+volumes:
+  node_modules:
+
+networks:
+  shared-network:
+    external: true
