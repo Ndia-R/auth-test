@@ -1,35 +1,33 @@
 FROM node:22-slim
 
 RUN apt-get update && \
-    apt-get install -y git curl sudo bash python3 python3-pip && \
+    apt-get install -y git curl sudo bash python3 && \
     rm -rf /var/lib/apt/lists/*
 
-# rootユーザーで作業ディレクトリの所有者とグループを変更
-USER root
+# 作業ディレクトリの所有者とグループを変更
 WORKDIR /workspace
 RUN chown node:node /workspace
 
-# npmを最新版に更新
-RUN npm install -g npm@latest
+# nodeユーザーがパスワードなしでsudoを使えるように設定
+# /etc/sudoers.d/nodeファイルを作成し、NOPASSWD: ALL を設定
+RUN echo "node ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/node && \
+    chmod 0440 /etc/sudoers.d/node
 
 # ユーザー変更（イメージの中の既存ユーザー）
 USER node
 
-# node_modulesディレクトリはvolumeとしてバインドするので
-# そのためのディレクトリをあらかじめ作成しておく
-RUN mkdir -p node_modules
-
-# nodeユーザー用のnpmグローバルディレクトリを設定
-RUN mkdir -p ~/.npm-global && \
-    npm config set prefix '~/.npm-global' && \
-    echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
-
-# Claude Codeをnodeユーザーでインストール
-RUN npm install -g @anthropic-ai/claude-code
+RUN mkdir -p node_modules && chown -R node:node node_modules
 
 # Python uvをnodeユーザーでインストール（Serena MCP用）
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# nodeユーザーのPATHにuvとnpm globalを追加
-ENV PATH="/home/node/.npm-global/bin:/home/node/.local/bin:$PATH"
-RUN echo 'export PATH="/home/node/.npm-global/bin:/home/node/.local/bin:$PATH"' >> /home/node/.bashrc
+# nodeユーザーのPATHにuvを追加
+ENV PATH="/home/node/.local/bin:$PATH"
+
+# Gemini CLIをグローバルインストール
+USER root
+RUN npm install -g @google/gemini-cli
+# 元のnodeユーザーに戻す
+USER node
+
+RUN mkdir -p $HOME/.claude $HOME/.gemini && chown -R node:node $HOME/.claude $HOME/.gemini

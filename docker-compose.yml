@@ -5,6 +5,8 @@ services:
     ports:
       - 5173:5173
       - 4173:4173
+    environment:
+      TZ: Asia/Tokyo
     volumes:
       - .:/workspace
       - node_modules:/workspace/node_modules

@@ -21,9 +21,10 @@
         "shardulm94.trailing-spaces",
         "mhutchie.git-graph",
         "mosapride.zenkaku",
-        "anthropic.claude-code"
+        "anthropic.claude-code",
+        "Google.gemini-cli-vscode-ide-companion"
       ]
     }
   },
-  "postCreateCommand": "npm install"
+  "postCreateCommand": "npm install && sudo chown -R node:node /home/node/.claude && sudo chown -R node:node /home/node/.gemini"
 }

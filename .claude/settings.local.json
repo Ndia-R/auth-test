@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uvx:*)",
+      "Bash(timeout:*)",
+      "Bash(docker ps -a --filter \"name=auth-bff\" --format \"table {{.Names}}\\t{{.Status}}\\t{{.Ports}}\")",
+      "Bash(docker network inspect shared-network --format '{{range .Containers}}{{.Name}} {{end}}')",
+      "Bash(curl -v http://auth-bff:8888)",
+      "Bash(curl -v http://auth-bff:8080)",
+      "Bash(curl -v http://auth-bff:3000)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

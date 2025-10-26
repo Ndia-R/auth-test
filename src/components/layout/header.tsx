@@ -1,8 +1,47 @@
 import { Button } from '@/components/ui/button';
 import { Link, useNavigate } from 'react-router';
 
+// CSRFトークン取得ヘルパー関数
+function getCsrfToken() {
+  const cookie = document.cookie
+    .split('; ')
+    .find((row) => row.startsWith('XSRF-TOKEN='));
+  return cookie ? cookie.split('=')[1] : '';
+}
+
 export default function Header() {
   const navigate = useNavigate();
+
+  const handleHealth = async () => {
+    try {
+      const res = await fetch('/api/me/reviews', {
+        credentials: 'include',
+      });
+      const data = await res.json();
+      console.log(data);
+    } catch (e) {
+      console.error('Error fetching genres:', e);
+    }
+    try {
+      const res = await fetch('/api/me/favorites', {
+        credentials: 'include',
+      });
+      const data = await res.json();
+      console.log(data);
+    } catch (e) {
+      console.error('Error fetching genres:', e);
+    }
+  };
+
+  const handleGenres = async () => {
+    try {
+      const res = await fetch('/api/genres');
+      const data = await res.json();
+      console.log(data);
+    } catch (e) {
+      console.error('Error fetching genres:', e);
+    }
+  };
 
   const handleLogin = () => {
     window.location.href = 'http://localhost:8888/bff/auth/login';
@@ -11,9 +50,12 @@ export default function Header() {
   // 通常ログアウト（BFFセッションのみクリア）
   async function normalLogout() {
     try {
-      const response = await fetch('http://localhost:8888/bff/auth/logout', {
+      const response = await fetch('/bff/auth/logout', {
         method: 'POST',
         credentials: 'include', // セッションCookie送信のため必須
+        headers: {
+          'X-XSRF-TOKEN': getCsrfToken(), // CSRFトークンをヘッダーに追加
+        },
       });
 
       if (response.ok) {
@@ -33,13 +75,13 @@ export default function Header() {
     console.log('Complete logout!!!');
 
     try {
-      const response = await fetch(
-        'http://localhost:8888/bff/auth/logout?complete=true',
-        {
-          method: 'POST',
-          credentials: 'include', // セッションCookie送信のため必須
-        }
-      );
+      const response = await fetch('/bff/auth/logout?complete=true', {
+        method: 'POST',
+        credentials: 'include', // セッションCookie送信のため必須
+        headers: {
+          'X-XSRF-TOKEN': getCsrfToken(), // CSRFトークンをヘッダーに追加
+        },
+      });
 
       if (response.ok) {
         const result = await response.json();
@@ -47,7 +89,7 @@ export default function Header() {
 
         // 🎯 重要：完全ログアウト後は明示的にログイン画面へリダイレクト
         // これにより次回ログイン時に確実にKeycloak認証画面が表示される
-        window.location.href = '/user'; // またはログイン画面のパス
+        window.location.href = '/logout-complete';
       } else {
         console.error('Complete logout failed with status:', response.status);
       }
@@ -69,6 +111,8 @@ export default function Header() {
             </li>
           </ul>
         </nav>
+        <Button onClick={handleHealth}>Health</Button>
+        <Button onClick={handleGenres}>ジャンル</Button>
         <Button onClick={handleLogin}>ログイン</Button>
         <Button onClick={normalLogout}>ログアウト</Button>
         <Button onClick={completeLogout}>完全ログアウト</Button>
