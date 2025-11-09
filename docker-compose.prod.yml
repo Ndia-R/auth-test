@@ -1,0 +1,52 @@
+# ==============================================
+# 本番環境用 Docker Compose 設定
+# ==============================================
+# 使用方法:
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# 本番環境での主な変更点:
+# - レジストリからイメージを取得（ローカルビルドしない）
+# - nginxでビルド済み静的ファイルを配信
+# - 自動再起動を有効化
+# - ヘルスチェックを追加
+# ==============================================
+
+services:
+  auth-test:
+    # レジストリからイメージを取得
+    # 開発環境テスト用: localhost:5000
+    # VPS本番用: vsv-emerald.com:5000
+    image: ${REGISTRY_URL:-localhost:5000}/auth-test:${IMAGE_TAG:-latest}
+
+    container_name: auth-test-prod
+    restart: always
+
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+
+    environment:
+      TZ: Asia/Tokyo
+
+    networks:
+      - shared-network
+
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    # リソース制限（本番環境）
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+networks:
+  shared-network:
+    external: true

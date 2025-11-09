@@ -31,3 +31,43 @@ RUN npm install -g @google/gemini-cli
 USER node
 
 RUN mkdir -p $HOME/.claude $HOME/.gemini && chown -R node:node $HOME/.claude $HOME/.gemini
+
+# ====================================
+# 本番環境: ビルドステージ
+# ====================================
+FROM node:22-slim AS production-builder
+
+WORKDIR /build
+
+# package.jsonとpackage-lock.jsonをコピー
+COPY package*.json ./
+
+# 依存関係をインストール
+RUN npm ci
+
+# ソースコードをコピー
+COPY . .
+
+# 本番用ビルド
+RUN npm run build
+
+# ====================================
+# 本番環境: 実行ステージ（nginx）
+# ====================================
+FROM nginx:alpine AS production
+
+# ビルド成果物をnginxのルートディレクトリにコピー
+COPY --from=production-builder /build/dist /usr/share/nginx/html
+
+# カスタムnginx設定（SPAルーティング対応）
+RUN echo 'server { \
+    listen 80; \
+    location / { \
+        root /usr/share/nginx/html; \
+        try_files $uri $uri/ /index.html; \
+    } \
+}' > /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
